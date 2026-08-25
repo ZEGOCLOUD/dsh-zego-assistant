@@ -1,0 +1,48 @@
+{
+  "name": "dsh-zego-assistant",
+  "version": "1.2.21",
+  "description": "DSH plugin bundle: the ZEGO integration skills (product integration, server tokens, server API signatures, resource downloader, doc search) plus the doc-ai MCP bridge. Skills are vendored verbatim from ZEGOCLOUD/zego-claude-code-plugins (plugins/zego-assistant); versions stay in lockstep with that plugin.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "cordis.patch.yml",
+    "assets/skills"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZEGOCLOUD/doc-dsh-plugin.git"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "plugin",
+    "skill",
+    "zego",
+    "zegocloud",
+    "rtc",
+    "im",
+    "aiagent"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-mcp-client": "^0.1.1-rc.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-skill": "^0.1.1-rc.2",
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/dsh-skill": "^0.1.1-rc.2"
+  }
+}

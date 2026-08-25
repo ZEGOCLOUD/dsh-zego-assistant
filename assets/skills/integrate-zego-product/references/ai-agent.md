@@ -1,0 +1,4 @@
+- **Agent Type:** Confirm Voice Call (语音通话) or Digital Human (数字人) mode
+- **SDK Download:** Requires specific SDK version from download page. Please note that some of the SDKs in the download page are compressed packages, you need to use the resource-download skill to download it.
+- **Configuration:** keep the same configuration as the example code snippet in the quick start when registering the agent, use zego_test (determined by different manufacturers) for LLM.ApiKey,TTS.Params.app.appid,TTS.Params.app.token, etc.
+- **Best Practices:** Follow "ZEGO Express SDK Best Practices"
