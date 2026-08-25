@@ -24,8 +24,16 @@ MCP 工具断线自动重连、`tools/list_changed` 重同步、每调用 60s �
 
 前置条件：已安装并运行 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)。
 
+从 npm 安装（预构建制品，推荐）：
+
 ```bash
 dsh plugin --profile web add dsh-zego-assistant
+```
+
+从 GitHub 安装（拉取源码）：
+
+```bash
+dsh plugin --profile web add github:ZEGOCLOUD/dsh-zego-assistant
 ```
 
 pnpm ≥ 8.15 时如报 `ERR_PNPM_ADDING_TO_ROOT`，加 `-w`：
@@ -35,13 +43,6 @@ dsh plugin --profile web add -w dsh-zego-assistant
 ```
 
 安装后重启该 profile，说一句 "integrate ZEGO RTC video call" 即可验证技能被激活。
-
-从 GitHub 安装（拉取源码，本地开发也用这种方式）：
-
-```bash
-dsh plugin --profile web add github:ZEGOCLOUD/dsh-zego-assistant
-dsh plugin --profile web --dump-config          # 应能看到 dsh-zego-assistant 层
-```
 
 ## 与源仓库同步
 
