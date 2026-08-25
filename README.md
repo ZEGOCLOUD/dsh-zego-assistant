@@ -39,7 +39,7 @@ dsh plugin --profile web add -w dsh-zego-assistant
 从 GitHub 安装（拉取源码，本地开发也用这种方式）：
 
 ```bash
-dsh plugin --profile web add github:ZEGOCLOUD/doc-dsh-plugin
+dsh plugin --profile web add github:ZEGOCLOUD/dsh-zego-assistant
 dsh plugin --profile web --dump-config          # 应能看到 dsh-zego-assistant 层
 ```
 

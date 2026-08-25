@@ -17,7 +17,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ZEGOCLOUD/doc-dsh-plugin.git"
+    "url": "git+https://github.com/ZEGOCLOUD/dsh-zego-assistant.git"
   },
   "keywords": [
     "deepseek-harness",
