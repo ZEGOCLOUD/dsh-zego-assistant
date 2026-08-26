@@ -2,8 +2,6 @@
 
 ZEGO 官方集成助手（zego-assistant）的 [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) 插件包。安装后，agent 的技能目录中会出现 5 个 ZEGO 技能，同时桥接 ZEGO doc-ai MCP 服务器的工具。
 
-技能内容逐字取自 [ZEGOCLOUD/zego-claude-code-plugins](https://github.com/ZEGOCLOUD/zego-claude-code-plugins) 的 `plugins/zego-assistant/skills`，版本号与源插件保持同步。
-
 ## 提供的技能
 
 | 技能 | 用途 |
@@ -43,20 +41,6 @@ dsh plugin --profile web add -w dsh-zego-assistant
 ```
 
 安装后重启该 profile，说一句 "integrate ZEGO RTC video call" 即可验证技能被激活。
-
-## 与源仓库同步
-
-技能目录 `assets/skills/` 从源仓库 vendor 而来（未做任何改写）。更新方式：
-
-```bash
-git clone --depth 1 https://github.com/ZEGOCLOUD/zego-claude-code-plugins /tmp/zego-cc
-rm -rf assets/skills && mkdir -p assets/skills
-cp -R /tmp/zego-cc/plugins/zego-assistant/skills/. assets/skills/
-```
-
-同步后把 `package.json` 的 `version` 对齐源插件版本（源 `plugins/zego-assistant/.claude-plugin/plugin.json` / marketplace.json）再发布。
-
-注意：`zego-doc-writer` 插件（文档团队内部工具）未包含在本包内；其 commands/agents 形态需要按 DSH 的 `ctx.commands` / `ctx.subagents` API 重写后才能迁移。
 
 ## 许可证
 
