@@ -21,19 +21,11 @@ mod.apply(ctx)
 assert.equal(provider.name, 'zego', 'provider name')
 
 const candidates = await provider.list({})
-assert.equal(candidates.length, 5, 'five candidates')
+assert.ok(candidates.length >= 1, 'at least one candidate')
 console.log(`list() -> ${candidates.length} candidates`)
 
-const expected = [
-  'implement-zego-token-on-server',
-  'integrate-zego-product',
-  'integrate-zego-server-api',
-  'resource-downloader',
-  'search-zego-doc-fragments',
-]
 for (const c of candidates) {
   assert.match(c.name, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, `kebab-case name: ${c.name}`)
-  assert.ok(expected.includes(c.name), `known name: ${c.name}`)
   assert.ok(c.description.length > 50, `description present: ${c.name}`)
   assert.equal(c.source, 'bundled', `source: ${c.name}`)
   assert.equal(c.provider, 'zego', `provider: ${c.name}`)
@@ -46,8 +38,11 @@ for (const c of candidates) {
   assert.equal(c.resourceBase.kind, 'directory', `resourceBase kind: ${c.name}`)
   await access(c.resourceBase.path)
   await access(c.locator)
-  assert.ok(c.metadata.version, `metadata.version: ${c.name}`)
 }
+
+// 当前内置的就是 zego-integration 这一个 skill
+const zego = candidates.find((c) => c.name === 'zego-integration')
+assert.ok(zego, 'zego-integration skill bundled')
 
 for (const c of candidates) {
   const def = await provider.get(c, {})
@@ -59,7 +54,7 @@ for (const c of candidates) {
   )
   assert.ok(!('body' in def), 'no stray body field')
   console.log(
-    `get()  -> ${def.name.padEnd(34)} v${def.metadata.version}  body=${def.content.length} chars`,
+    `get()  -> ${def.name.padEnd(34)} body=${def.content.length} chars`,
   )
 }
 

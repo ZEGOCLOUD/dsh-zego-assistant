@@ -1,22 +1,29 @@
 # dsh-zego-assistant
 
-ZEGO 官方集成助手（zego-assistant）的 [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) 插件包。安装后，agent 的技能目录中会出现 5 个 ZEGO 技能，同时桥接 ZEGO doc-ai MCP 服务器的工具。
+ZEGO 官方集成 Skill（[zego-integration](https://github.com/ZEGOCLOUD/zego-integration)）的 [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) 插件包。安装后，agent 的技能目录中会出现 `zego-integration` 技能，AI 处理 ZEGO 相关任务时自动加载产品领域知识、官方文档索引与标准集成工作流程。
 
-## 提供的技能
+## 提供的能力
 
-| 技能 | 用途 |
+安装的是完整的 zego-integration Skill，能力包括：
+
+| 能力 | 用途 |
 |---|---|
-| `integrate-zego-product` | 集成 ZEGO 产品 SDK（Express/ZIM/AI Agent/数字人/白板），按流程引导产品、平台选择与文档查阅 |
-| `implement-zego-token-on-server` | 服务端实现 ZEGO Token 生成，附 6 种语言示例（Go/Java/Node/Python/PHP/C#） |
-| `integrate-zego-server-api` | 调用 ZEGO 服务端 API（房间管理、混流、踢人等），含签名机制与多语言签名示例 |
-| `resource-downloader` | 下载 ZEGO SDK、示例项目与 GitHub 仓库 |
-| `search-zego-doc-fragments` | 基于 RAG 的文档片段检索：错误码、API 参数、平台兼容性排查 |
+| 产品集成 | 引导 ZEGO 产品选型、平台选择与集成实施（RTC/ZIM/AI Agent/数字人/白板等） |
+| 文档查阅 | 官方文档全量本地缓存，支持错误码、接口参数、平台兼容性查询 |
+| 服务端 Token 生成 | token04 生成规范与多语言服务端示例 |
+| 服务端 API 调用 | 签名机制说明与多语言调用示例 |
+| 资源下载 | 下载 SDK、示例项目与代码（内置国内镜像回退） |
+| 场景最佳实践 | Web/iOS/Android 等场景实战指引，持续扩充 |
 
-## MCP 桥接
+## Skill 同步与发布
 
-本包通过 [`@deepseek-ai/dsh-mcp-client`](https://www.npmjs.com/package/@deepseek-ai/dsh-mcp-client) 连接 `https://doc-ai.zego.im/mcp/`，`serverName` 为 `ZEGO`，因此模型看到的工具名形如 `mcp__ZEGO__get_doc_links` —— 与 Claude Code 的 `mcp__<server>__<tool>` 命名完全一致，SKILL.md 中对 MCP 工具的引用无需任何改动。
+`assets/skills/zego-integration/` 内容来自 [ZEGOCLOUD/zego-integration](https://github.com/ZEGOCLOUD/zego-integration)。日常发布只需在 main 分支运行：
 
-MCP 工具断线自动重连、`tools/list_changed` 重同步、每调用 60s 超时均由 dsh-mcp-client 内置处理。
+```bash
+./publish.sh          # 或 ./publish.sh minor / major
+```
+
+脚本会自动检查上游更新并同步；有变化时提交同步、自动递增版本号并执行 `npm publish`（2FA 账号按提示在终端输入 OTP），随后推送 git。上游无变化则不做任何事；网络受限时自动走镜像克隆上游。
 
 ## 安装
 
@@ -40,7 +47,7 @@ pnpm ≥ 8.15 时如报 `ERR_PNPM_ADDING_TO_ROOT`，加 `-w`：
 dsh plugin --profile web add -w dsh-zego-assistant
 ```
 
-安装后重启该 profile，说一句 "integrate ZEGO RTC video call" 即可验证技能被激活。
+安装后重启该 profile，说一句 "帮我用 ZEGO 实现 1v1 视频通话" 即可验证技能被激活。首次使用时 Skill 会自动下载文档快照到本地缓存（`~/.cache/zego-integration/`）。
 
 ## 许可证
 

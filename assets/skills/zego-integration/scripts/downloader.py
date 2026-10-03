@@ -2,16 +2,18 @@
 """
 下载资源到本地。支持下载图片、视频、音频、文档、压缩包、Github代码仓库等资源。
 如果是压缩包，下载后会自动解压缩。
-默认下载到 workspace 根目录的 .tmp 目录下，每次下载均生成一个随机文件夹名称。
+默认下载到当前目录的 .tmp 目录下，每次下载均生成一个随机文件夹名称。
 也可以指定临时目录的根路径。
 
 命令行参数：
 - url: 资源 URL
-- tmp_root: （可选）临时目录的根路径。如果不提供，则使用 workspace/.tmp
+- tmp_root: （可选）临时目录的根路径。如果不提供，则在当前目录下创建 .tmp
 
 返回：
 - 下载后的文件夹路径。空字符串表示下载失败。
 """
+
+from __future__ import annotations  # 兼容 Python 3.9 的 X | Y 类型注解写法
 
 import os
 import sys
@@ -23,40 +25,25 @@ import subprocess
 from pathlib import Path
 from urllib.parse import urlparse, unquote
 
-try:
-    import requests
-except ImportError:
-    print("错误: 需要安装 requests 库")
-    print("请运行: pip install requests")
-    sys.exit(1)
+# requests 仅普通文件下载需要（GitHub 仓库克隆不需要）；延迟到用时再导入，
+# 避免没有 requests 的环境连 clone 功能都用不了
+requests = None
 
 
-def _get_workspace_root() -> Path:
-    """
-    获取 workspace 根目录
-
-    Returns:
-        workspace 根目录路径
-    """
-    # 从当前脚本位置向上查找 workspace 根目录
-    # 脚本位于 .docuo/scripts/，需要向上两级到 workspace 根目录
-    script_dir = Path(__file__).parent.resolve()
-    workspace_root = script_dir.parent.parent.resolve()
-
-    # 尝试从环境变量获取
-    workspace_path = os.environ.get("CLAUDE_CODE_WORKSPACE")
-    if workspace_path:
-        workspace_root = Path(workspace_path)
-
-    return workspace_root
+def _get_requests():
+    global requests
+    if requests is None:
+        import requests as _r  # noqa: F401
+        requests = _r
+    return requests
 
 
 def _create_temp_dir(tmp_root: str | None = None) -> Path:
     """
-    在指定根目录（或 workspace 根目录的 .tmp 目录）下创建随机文件夹
+    在指定根目录下创建随机文件夹
 
     Args:
-        tmp_root: 临时目录的根路径。如果为 None，则使用 workspace/.tmp
+        tmp_root: 临时目录的根路径。如果为 None，则在当前目录下创建 .tmp
 
     Returns:
         创建的临时目录路径
@@ -64,8 +51,7 @@ def _create_temp_dir(tmp_root: str | None = None) -> Path:
     if tmp_root:
         tmp_dir = Path(tmp_root).resolve()
     else:
-        workspace_root = _get_workspace_root()
-        tmp_dir = workspace_root / ".tmp"
+        tmp_dir = Path.cwd() / ".tmp"
 
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -228,7 +214,7 @@ def _normalize_github_url(url: str) -> str:
 
 def _download_github_repo(url: str, target_dir: Path) -> tuple[bool, str]:
     """
-    下载 GitHub 仓库
+    下载 GitHub 仓库（直连失败时自动回退 gh-proxy.com / gh-proxy.net 镜像）
 
     Args:
         url: GitHub 仓库 URL
@@ -238,8 +224,12 @@ def _download_github_repo(url: str, target_dir: Path) -> tuple[bool, str]:
         (是否下载成功, 错误信息)
     """
     try:
-        # 标准化为 HTTPS URL
+        # 标准化为 HTTPS URL，构建直连 + 镜像候选链（镜像需支持 git 协议）
         https_url = _normalize_github_url(url)
+        candidates = [https_url]
+        if https_url.startswith('https://github.com/'):
+            candidates.append(f'https://gh-proxy.com/{https_url}')
+            candidates.append(f'https://ghfast.top/{https_url}')
 
         # 设置环境变量，禁用所有交互式提示
         env = os.environ.copy()
@@ -247,31 +237,33 @@ def _download_github_repo(url: str, target_dir: Path) -> tuple[bool, str]:
         env['GIT_ASKPASS'] = 'echo'  # 禁用密码提示
         env['GIT_SSH_COMMAND'] = 'ssh -o BatchMode=yes'  # SSH 非交互模式
 
-        # 使用 git clone (HTTPS 协议，非交互模式)
-        result = subprocess.run(
-            ['git', 'clone', '--depth', '1', '--no-single-branch', https_url, str(target_dir)],
-            capture_output=True,
-            text=True,
-            timeout=60,  # 60秒超时
-            env=env,
-            stdin=subprocess.DEVNULL  # 禁用标准输入
-        )
+        last_err = ""
+        for clone_url in candidates:
+            # 使用 git clone (HTTPS 协议，非交互模式)
+            result = subprocess.run(
+                ['git', 'clone', '--depth', '1', '--no-single-branch', clone_url, str(target_dir)],
+                capture_output=True,
+                text=True,
+                timeout=120,  # 超时
+                env=env,
+                stdin=subprocess.DEVNULL  # 禁用标准输入
+            )
 
-        if result.returncode == 0:
-            # 删除 .git 目录以节省空间
-            git_dir = target_dir / '.git'
-            if git_dir.exists():
-                shutil.rmtree(git_dir)
-            return True, ""
-        else:
-            # 检查是否是仓库不存在
+            if result.returncode == 0:
+                # 删除 .git 目录以节省空间
+                git_dir = target_dir / '.git'
+                if git_dir.exists():
+                    shutil.rmtree(git_dir)
+                return True, ""
+
             error_msg = result.stderr.lower()
-            if 'not found' in error_msg or 'repository not found' in error_msg or '404' in error_msg:
-                return False, "仓库不存在或无法访问"
+            if 'not found' in error_msg or 'repository not found' in error_msg or "'404'" in error_msg:
+                return False, "仓库不存在或无法访问"  # 404 与通道无关，直接终止
             elif 'authentication' in error_msg or 'permission denied' in error_msg or 'terminal prompts disabled' in error_msg:
                 return False, "仓库需要认证或权限不足"
-            else:
-                return False, f"克隆失败: {result.stderr.strip()}"
+            last_err = f"克隆失败: {result.stderr.strip()[:200]}"
+
+        return False, last_err or "克隆失败（直连与镜像均失败）"
 
     except FileNotFoundError:
         return False, "未找到 git 命令，请先安装 git"
@@ -319,8 +311,9 @@ def _download_file(url: str, target_path: Path) -> bool:
         # 获取请求头
         headers = _get_download_headers(url)
 
-        # 发送 GET 请求
-        response = requests.get(url, headers=headers, stream=True, timeout=30)
+        # 发送 GET 请求（requests 按需加载）
+        req = _get_requests()
+        response = req.get(url, headers=headers, stream=True, timeout=30)
         response.raise_for_status()
 
         # 写入文件
@@ -331,7 +324,11 @@ def _download_file(url: str, target_path: Path) -> bool:
 
         return True
 
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
+        if requests is not None and isinstance(e, requests.exceptions.RequestException):
+            print(f"下载文件失败: {str(e)}", file=sys.stderr)
+            return False
+        print(f"保存文件失败: {str(e)}", file=sys.stderr)
         print(f"下载文件失败: {str(e)}", file=sys.stderr)
         return False
     except Exception as e:
@@ -351,7 +348,7 @@ def download_resource(url: str, silent: bool = False, tmp_root: str | None = Non
     Args:
         url: 资源 URL
         silent: 是否静默模式（不输出日志）
-        tmp_root: 临时目录的根路径。如果为 None，则使用 workspace/.tmp
+        tmp_root: 临时目录的根路径。如果为 None，则在当前目录下创建 .tmp
 
     Returns:
         下载后的文件夹路径。失败时返回包含错误信息的字符串格式。
