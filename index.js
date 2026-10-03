@@ -1,32 +1,30 @@
 // dsh-zego-assistant — bundled ZEGO skill provider for DeepSeek Harness.
 //
-// Registers the five zego-assistant skills on ctx.skills, following the
+// Registers the vendored zego-integration skill on ctx.skills, following the
 // bundled-provider pattern of dsh-agora / @deepseek-ai/dsh-skill-badge: a
 // Cordis plugin whose apply() registers one provider.
 //
-// assets/skills/ is vendored verbatim from ZEGOCLOUD/zego-claude-code-plugins
-// (plugins/zego-assistant/skills). SKILL.md frontmatter stays the single
-// source of truth: name/description/version are parsed at list() time, and
-// get() returns the body with the frontmatter stripped.
-//
-// The doc-ai MCP server is wired separately in cordis.patch.yml via
-// @deepseek-ai/dsh-mcp-client (serverName ZEGO), so its tools arrive as
-// mcp__ZEGO__<rawName> — the same server-qualified shape Claude Code uses,
-// which is what the SKILL.md bodies already reference.
-import { readFile } from 'node:fs/promises'
+// assets/skills/ holds skills vendored from ZEGOCLOUD/zego-integration and is
+// auto-synced by .github/workflows/sync-skill.yml. Every subdirectory with a
+// SKILL.md is exposed — no code change needed when the upstream skill adds
+// content. SKILL.md frontmatter stays the single source of truth:
+// name/description/version are parsed at list() time, and get() returns the
+// body with the frontmatter stripped.
+import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { BUNDLED_SKILL_RANK } from '@deepseek-ai/dsh-skill'
 
 const PROVIDER_NAME = 'zego'
 const SKILLS_ROOT = fileURLToPath(new URL('./assets/skills/', import.meta.url))
-const SKILL_NAMES = [
-  'integrate-zego-product',
-  'implement-zego-token-on-server',
-  'integrate-zego-server-api',
-  'resource-downloader',
-  'search-zego-doc-fragments',
-]
+
+async function listSkillDirs() {
+  const entries = await readdir(SKILLS_ROOT, { withFileTypes: true })
+  return entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
+}
 
 function parseFrontmatter(raw) {
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw)
@@ -70,7 +68,7 @@ async function loadCandidate(skillDirName) {
 
 const provider = {
   name: PROVIDER_NAME,
-  list: () => Promise.all(SKILL_NAMES.map(loadCandidate)),
+  list: async () => Promise.all((await listSkillDirs()).map(loadCandidate)),
   async get(candidate) {
     const { body } = parseFrontmatter(await readFile(candidate.locator, 'utf8'))
     return { ...candidate, content: body }
@@ -81,7 +79,7 @@ const provider = {
 export const name = 'zego-skills'
 /** Service required by the bundled provider. */
 export const inject = ['skills']
-/** Register the bundled `zego` provider on `ctx.skills`. */
+/** Register the bundled `zego` provider on ctx.skills. */
 export function apply(ctx) {
   ctx.skills.registerProvider(() => provider)
 }

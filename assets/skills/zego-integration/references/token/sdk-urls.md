@@ -129,21 +129,25 @@ When using the download script, use these exact identifiers:
 | PHP       | PHP        |
 | C#        | CSHARP     |
 
-## Intelligent Directory Selection
+## 建议存放位置（由你按项目结构决定）
 
-The download script automatically determines the best location to save the SDK:
-
-1. **Existing zego directory** - If a `zego/` directory exists in the project (within 3 levels deep), it will be reused
-2. **Language-recommended directory** - Tries language-specific paths that already exist
-3. **Project common directory** - Uses existing common directories (`lib/`, `utils/`, `sdk/`, `services/`)
-4. **Src directory** - If `src/` exists, uses `src/zego/token`
-5. **Default** - Falls back to `workspace/zego/token`
-
-To override and specify a custom path:
+脚本默认把源文件下载到**当前目录**，用 `--output` 指定其他位置：
 
 ```bash
-python scripts/download_sdk.py --language PYTHON --output /path/to/custom/location/token04.py
+python scripts/download_sdk.py --language PYTHON --output src/zego/token/token04.py
 ```
+
+放入项目时参考下表（各语言特色路径，项目已有 `zego/` 目录时优先放 `<该目录>/token`）：
+
+| 语言 | 建议路径 |
+|---|---|
+| Go | `pkg/zego/token`、`internal/zego/token` |
+| Python | `utils/zego/token`、`services/zego/token` |
+| Node.js | `src/zego/token`、`utils/zego/token` |
+| Java | `src/main/java/im/zego/serverassistant/utils`（须与文件内 package 声明一致，放别处要同步改 package 行） |
+| PHP | `ZEGO/Token` |
+| C# | `ZegoServerAssistant/`、`Services/ZegoServerAssistant` |
+| C++ | `utils/zego/token`、`src/zego/token` |
 
 ## Fallback Language
 
@@ -162,3 +166,14 @@ https://github.com/zegoim/zego_server_assistant/tree/release/github/token
 - All SDK URLs point to the `release` branch
 - Token version: `token04` (current version for ZEGO services)
 - Always use the `token04` version for new integrations
+
+## 网络不通时的镜像下载（github 直连失败）
+
+上面所有 `raw.githubusercontent.com` / `github.com` URL 在无法直连 GitHub 的网络下会失败。两种解决办法：
+
+1. **推荐：用 `scripts/download_sdk.py`**——已内置自动回退，直连失败时改走 `https://gh-proxy.com/<原URL>` 镜像。
+2. 手动下载时，在原 URL 前加镜像前缀：
+
+   ```bash
+   curl -LO "https://gh-proxy.com/https://raw.githubusercontent.com/zegoim/zego_server_assistant/refs/heads/release/github/token/nodejs/token04/server/zegoServerAssistant.ts"
+   ```

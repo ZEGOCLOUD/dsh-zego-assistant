@@ -1,14 +1,5 @@
-# dsh-zego-assistant bundle patch: mounts the ZEGO skills provider and bridges
-# the ZEGO doc-ai MCP server. With serverName ZEGO, MCP tools land as
-# mcp__ZEGO__<rawName> — the same server-qualified shape Claude Code uses,
-# so the SKILL.md bodies already reference them unchanged.
+# dsh-zego-assistant bundle patch: mounts the ZEGO skills provider bundled in
+# this package (see index.js and assets/skills/).
 - insert:
     - id: zego-skills
       name: dsh-zego-assistant
-
-    - id: mcp-zego
-      name: '@deepseek-ai/dsh-mcp-client'
-      config:
-        serverName: ZEGO
-        transport: streamable-http
-        url: https://doc-ai.zego.im/mcp/
