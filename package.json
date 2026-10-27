@@ -36,9 +36,6 @@
       "patch": "./cordis.patch.yml"
     }
   },
-  "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1"
-  },
   "devDependencies": {
     "@deepseek-ai/dsh-skill": "^0.2.0-rc.2"
   }
